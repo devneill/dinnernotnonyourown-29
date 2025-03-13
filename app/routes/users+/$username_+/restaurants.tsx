@@ -7,6 +7,8 @@ import { getAllRestaurantDetails, joinDinnerGroup, leaveDinnerGroup, type Restau
 import { cn } from '#app/utils/misc'
 import { StatusButton } from '#app/components/ui/status-button'
 import { Button } from '#app/components/ui/button'
+import { Card, CardContent, CardFooter } from '#app/components/ui/card'
+import { ToggleGroup, ToggleGroupItem } from '#app/components/ui/toggle-group'
 import { MapPin, Map, Star } from 'lucide-react'
 
 // Hilton coordinates in Salt Lake City
@@ -22,7 +24,7 @@ const ActionSchema = z.object({
   restaurantId: z.string().optional(),
 })
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request)
   
   // Get URL search params for filtering
@@ -198,7 +200,7 @@ function Filters({
   const setFilter = (key: string, value: string | null) => {
     const newParams = new URLSearchParams(searchParams)
     
-    if (value === null) {
+    if (value === null || currentFilters[key as keyof typeof currentFilters] === value) {
       newParams.delete(key)
     } else {
       newParams.set(key, value)
@@ -207,58 +209,57 @@ function Filters({
     setSearchParams(newParams, { preventScrollReset: true, replace: true })
   }
   
-  const isActive = (key: string, value: string) => {
-    return currentFilters[key as keyof typeof currentFilters] === value
-  }
-  
   return (
     <div className="space-y-4">
       <div>
         <h3 className="text-sm font-medium mb-2">Distance</h3>
-        <div className="grid grid-cols-4 gap-2">
+        <ToggleGroup type="single" variant="outline" className="grid grid-cols-4 gap-2">
           {[1, 2, 5, 10].map(distance => (
-            <Button
+            <ToggleGroupItem 
               key={distance}
-              variant={isActive('distance', distance.toString()) ? 'default' : 'outline'}
-              onClick={() => setFilter('distance', isActive('distance', distance.toString()) ? null : distance.toString())}
+              value={distance.toString()}
+              data-state={currentFilters.distance === distance.toString() ? 'on' : 'off'}
+              onClick={() => setFilter('distance', distance.toString())}
               className="w-full"
             >
               {distance} mi
-            </Button>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
       </div>
       
       <div>
         <h3 className="text-sm font-medium mb-2">Rating</h3>
-        <div className="grid grid-cols-4 gap-2">
+        <ToggleGroup type="single" variant="outline" className="grid grid-cols-4 gap-2">
           {[1, 2, 3, 4].map(rating => (
-            <Button
+            <ToggleGroupItem 
               key={rating}
-              variant={isActive('rating', rating.toString()) ? 'default' : 'outline'}
-              onClick={() => setFilter('rating', isActive('rating', rating.toString()) ? null : rating.toString())}
+              value={rating.toString()}
+              data-state={currentFilters.rating === rating.toString() ? 'on' : 'off'}
+              onClick={() => setFilter('rating', rating.toString())}
               className="w-full"
             >
               {'⭐'.repeat(rating)}
-            </Button>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
       </div>
       
       <div>
         <h3 className="text-sm font-medium mb-2">Price</h3>
-        <div className="grid grid-cols-4 gap-2">
+        <ToggleGroup type="single" variant="outline" className="grid grid-cols-4 gap-2">
           {[1, 2, 3, 4].map(price => (
-            <Button
+            <ToggleGroupItem 
               key={price}
-              variant={isActive('price', price.toString()) ? 'default' : 'outline'}
-              onClick={() => setFilter('price', isActive('price', price.toString()) ? null : price.toString())}
+              value={price.toString()}
+              data-state={currentFilters.price === price.toString() ? 'on' : 'off'}
+              onClick={() => setFilter('price', price.toString())}
               className="w-full"
             >
               {'$'.repeat(price)}
-            </Button>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
       </div>
     </div>
   )
@@ -270,7 +271,7 @@ function RestaurantCard({ restaurant }: { restaurant: RestaurantWithDetails }) {
   const isLeaving = fetcher.state === 'submitting' && fetcher.formData?.get('intent') === 'leave'
   
   return (
-    <div className="border rounded-lg overflow-hidden flex flex-col">
+    <Card className="overflow-hidden flex flex-col">
       <div className="relative h-48">
         {restaurant.photoRef ? (
           <img 
@@ -299,7 +300,7 @@ function RestaurantCard({ restaurant }: { restaurant: RestaurantWithDetails }) {
         </div>
       </div>
       
-      <div className="p-4 flex-1 flex flex-col">
+      <CardContent className="p-4 flex-1 flex flex-col">
         <h3 className="font-bold text-lg mb-1">{restaurant.name}</h3>
         
         <div className="flex items-center text-sm text-gray-600 mb-2">
@@ -318,44 +319,44 @@ function RestaurantCard({ restaurant }: { restaurant: RestaurantWithDetails }) {
             Directions
           </a>
         )}
-        
-        <div className="mt-auto">
-          <div className="text-sm mb-2">
-            {restaurant.attendeeCount > 0 ? (
-              <span>{restaurant.attendeeCount} attending</span>
-            ) : (
-              <span>&nbsp;</span>
-            )}
-          </div>
-          
-          <fetcher.Form method="post" className="mt-2">
-            <input type="hidden" name="restaurantId" value={restaurant.id} />
-            
-            {restaurant.isUserAttending ? (
-              <StatusButton
-                type="submit"
-                name="intent"
-                value="leave"
-                status={isLeaving ? 'pending' : 'idle'}
-                className="w-full"
-                variant="destructive"
-              >
-                {isLeaving ? 'Leaving...' : 'Leave'}
-              </StatusButton>
-            ) : (
-              <StatusButton
-                type="submit"
-                name="intent"
-                value="join"
-                status={isJoining ? 'pending' : 'idle'}
-                className="w-full"
-              >
-                {isJoining ? 'Joining...' : 'Join'}
-              </StatusButton>
-            )}
-          </fetcher.Form>
+      </CardContent>
+      
+      <CardFooter className="p-4 pt-0 flex flex-col">
+        <div className="text-sm mb-2">
+          {restaurant.attendeeCount > 0 ? (
+            <span>{restaurant.attendeeCount} attending</span>
+          ) : (
+            <span>&nbsp;</span>
+          )}
         </div>
-      </div>
-    </div>
+        
+        <fetcher.Form method="post" className="w-full">
+          <input type="hidden" name="restaurantId" value={restaurant.id} />
+          
+          {restaurant.isUserAttending ? (
+            <StatusButton
+              type="submit"
+              name="intent"
+              value="leave"
+              status={isLeaving ? 'pending' : 'idle'}
+              className="w-full"
+              variant="destructive"
+            >
+              {isLeaving ? 'Leaving...' : 'Leave'}
+            </StatusButton>
+          ) : (
+            <StatusButton
+              type="submit"
+              name="intent"
+              value="join"
+              status={isJoining ? 'pending' : 'idle'}
+              className="w-full"
+            >
+              {isJoining ? 'Joining...' : 'Join'}
+            </StatusButton>
+          )}
+        </fetcher.Form>
+      </CardFooter>
+    </Card>
   )
 } 
