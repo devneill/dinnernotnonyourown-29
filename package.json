@@ -92,6 +92,7 @@
     "isbot": "^5.1.23",
     "litefs-js": "^1.1.2",
     "lru-cache": "^11.0.2",
+    "lucide-react": "^0.479.0",
     "mime-types": "^2.1.35",
     "morgan": "^1.10.0",
     "openimg": "^0.6.0",

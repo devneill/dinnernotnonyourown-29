@@ -55,6 +55,13 @@ export function UserDropdown() {
 							</Icon>
 						</Link>
 					</DropdownMenuItem>
+					<DropdownMenuItem asChild>
+						<Link prefetch="intent" to={`/users/${user.username}/restaurants`}>
+							<Icon className="text-body-md" name="magnifying-glass">
+								Restaurants
+							</Icon>
+						</Link>
+					</DropdownMenuItem>
 					<Form action="/logout" method="POST" ref={formRef}>
 						<DropdownMenuItem asChild>
 							<button type="submit" className="w-full">
